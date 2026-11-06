@@ -22,9 +22,10 @@
 	import { invalidateAll } from '$app/navigation';
 	import { page as currentPage } from '$app/state';
 	import type { PageTreeNode } from '$lib/page-tree';
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { cn } from '$lib/utils';
 	import { withBase } from '$lib/base-path';
+	import { treeOpenState } from '$lib/tree-open-state.svelte';
 
 	let {
 		node,
@@ -47,8 +48,13 @@
 	const isAncestorOfActive = $derived(currentPage.url.pathname.startsWith(href + '/'));
 	const title = $derived(node.page?.title ?? node.name);
 
-	// Opened for the open page — also when it's reached by a link later on.
+	// Opened for the open page — also when it's reached by a link later on —
+	// and kept open (or closed) across visits, as the person left it.
+	// Restored after mount, so the server's HTML and hydration agree.
 	let open = $state(untrack(() => isAncestorOfActive));
+	onMount(() => {
+		if (treeOpenState.isOpen(node.fullPath)) open = true;
+	});
 	$effect.pre(() => {
 		if (isAncestorOfActive) open = true;
 	});
@@ -167,7 +173,11 @@
 {/snippet}
 
 {#if isFolder}
-	<Collapsible.Root bind:open class="group/collapsible">
+	<Collapsible.Root
+		bind:open
+		onOpenChange={(value) => treeOpenState.set(node.fullPath, value)}
+		class="group/collapsible"
+	>
 		<Sidebar.MenuItem>
 			<div class="group/row relative flex items-center">
 				{#if node.page}
