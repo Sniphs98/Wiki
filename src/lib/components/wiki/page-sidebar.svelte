@@ -17,9 +17,9 @@
 	}: {
 		pages: PageSummary[];
 		canEdit: boolean;
-		/** The paths the person pinned: first in their level. */
+		/** The paths an admin pinned: first in their level, for everyone. */
 		pinned?: string[];
-		/** Pins are per person: only with a login. */
+		/** Only admins pin and unpin. */
 		canPin?: boolean;
 		/** Admins get the rights dialog in each entry's menu. */
 		canManageAccess?: boolean;

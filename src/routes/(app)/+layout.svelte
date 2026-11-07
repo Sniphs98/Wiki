@@ -52,7 +52,7 @@
 		pages={data.pages}
 		{canEdit}
 		pinned={data.pinned}
-		canPin={!!data.user}
+		canPin={data.isAdmin && !!data.user}
 		canManageAccess={data.isAdmin && !!data.user}
 	/>
 	<Sidebar.Inset class="min-h-0">

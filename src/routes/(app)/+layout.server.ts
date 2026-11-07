@@ -9,9 +9,11 @@ export const load: LayoutServerLoad = async (event) => {
 	const pages = event.locals.access.readable(await listPages());
 
 	const user = event.locals.user;
-	const [preferences, inboxCount, pinned] = user
-		? await Promise.all([getUserPreferences(user.id), countNotes(user.id), pinnedPaths(user.id)])
-		: [null, 0, []];
+	const [preferences, inboxCount, pinned] = await Promise.all([
+		user ? getUserPreferences(user.id) : null,
+		user ? countNotes(user.id) : 0,
+		pinnedPaths()
+	]);
 
 	return {
 		pages,
@@ -22,7 +24,7 @@ export const load: LayoutServerLoad = async (event) => {
 		inboxCount,
 		/** No login at all (see loginMethods): no account menu either. */
 		loginEnabled,
-		/** Pages and folders the person pinned in the tree. */
+		/** Pages and folders an admin pinned in the tree, for everyone. */
 		pinned,
 		toolbar: preferences?.toolbar ?? null
 	};
