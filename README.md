@@ -112,7 +112,7 @@ The service sees the text of all pages, including areas only a few people may re
 - **Backlinks:** below every page, **Verlinkt von** (Linked from) lists the pages that link to it with a `[[wiki link]]` or a `/w/…` link — as far as you may read them. Links written before the page existed count as soon as it does.
 - **Tags:** set them below the editor, separated by commas ("hr, leave"). They appear below the page title; the tag icon at the top right leads to all tags and their pages. Tags aren't part of the version history.
 - **Inbox:** the inbox icon at the top right (with the number of open notes) takes a quick note that has no place yet — only you see your inbox. **Einsortieren** (Sort in) moves a note into a page: appended if the page exists, otherwise as a new page.
-- **Pins and folders:** hovering a page or folder in the sidebar shows a pin; pinned items move to the top of their level, for you only. A folder — a path with pages below it but none of its own — opens as a list of what's in it.
+- **Pins and folders:** admins pin a page or folder from its menu in the sidebar; pinned items move to the top of their level, for everyone. A folder — a path with pages below it but none of its own — opens as a list of what's in it.
 
 ### Version history
 

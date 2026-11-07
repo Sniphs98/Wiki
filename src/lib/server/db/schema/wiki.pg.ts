@@ -221,19 +221,15 @@ export const inboxNote = pgTable(
 );
 
 /**
- * What a person pinned in the page tree: a page or a folder, by path —
- * shown first in its level, for them only (see $lib/page-tree.ts).
+ * What an admin pinned in the page tree: a page or a folder, by path —
+ * shown first in its level, for everyone (see $lib/page-tree.ts).
  */
-export const pagePin = pgTable(
-	'page_pin',
-	{
-		userId: text('user_id')
-			.notNull()
-			.references(() => user.id, { onDelete: 'cascade' }),
-		path: text('path').notNull()
-	},
-	(table) => [primaryKey({ columns: [table.userId, table.path] })]
-);
+export const treePin = pgTable('tree_pin', {
+	path: text('path').primaryKey(),
+	/** Who pinned it; kept when that account goes. */
+	pinnedBy: text('pinned_by').references(() => user.id, { onDelete: 'set null' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
 
 /**
  * Where moved pages used to be: an old path leads to the page now. A page

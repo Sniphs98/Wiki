@@ -92,6 +92,13 @@
       "when": 1793403318032,
       "tag": "0012_page_redirects",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794059373839,
+      "tag": "0013_tree_pins",
+      "breakpoints": true
     }
   ]
 }
