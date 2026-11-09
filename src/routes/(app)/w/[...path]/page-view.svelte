@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MarkdownEditor from '$lib/components/wiki/markdown-editor.svelte';
 	import PageHeader from '$lib/components/wiki/page-header.svelte';
+	import PageIcon from '$lib/components/wiki/page-icon.svelte';
 	import PageBreakMarkers from '$lib/components/wiki/page-break-markers.svelte';
 	import PageActions from '$lib/components/wiki/page-actions.svelte';
 	import PdfExportDialog from '$lib/components/wiki/pdf-export-dialog.svelte';
@@ -17,6 +18,9 @@
 
 	const canEdit = $derived(data.canEdit);
 	const hasChildren = $derived(data.pages.some((p) => p.path.startsWith(`${data.page.path}/`)));
+
+	// From the tree's list, which reloads when someone changes the icon.
+	const icon = $derived(data.pages.find((p) => p.id === data.page.id)?.icon ?? data.page.icon);
 
 	let exportOpen = $state(false);
 	let moveOpen = $state(false);
@@ -56,13 +60,16 @@
 			onmove={() => (moveOpen = true)}
 		/>
 	</div>
-	<PageHeader
-		title={data.version.title}
-		content={data.version.content}
-		versionNumber={data.version.versionNumber}
-		updatedAt={data.page.updatedAt}
-		historyHref={resolve('/(app)/w/[...path]/history', { path: data.page.path })}
-	/>
+	<div class="group/header">
+		<PageIcon pageId={data.page.id} {icon} {canEdit} />
+		<PageHeader
+			title={data.version.title}
+			content={data.version.content}
+			versionNumber={data.version.versionNumber}
+			updatedAt={data.page.updatedAt}
+			historyHref={resolve('/(app)/w/[...path]/history', { path: data.page.path })}
+		/>
+	</div>
 	{#if data.tags.length > 0}
 		<ul class="mb-4 flex flex-wrap gap-1.5" aria-label="Tags">
 			{#each data.tags as tag (tag)}

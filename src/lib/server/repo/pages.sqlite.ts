@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { db } from '$lib/server/db';
 import { page, pageRedirect, pageVersion } from '$lib/server/db/schema/sqlite';
@@ -15,7 +15,13 @@ const sqlite = db as BetterSQLite3Database<typeof schema>;
 
 export async function listPages(): Promise<PageSummary[]> {
 	return sqlite
-		.select({ id: page.id, path: page.path, title: page.title, updatedAt: page.updatedAt })
+		.select({
+			id: page.id,
+			path: page.path,
+			title: page.title,
+			icon: page.icon,
+			updatedAt: page.updatedAt
+		})
 		.from(page)
 		.orderBy(page.path);
 }
@@ -158,4 +164,12 @@ export async function redirectFor(path: string): Promise<string | null> {
 
 export async function deleteRedirect(path: string): Promise<void> {
 	await sqlite.delete(pageRedirect).where(eq(pageRedirect.path, path));
+}
+
+/** Sets the page's icon (null: the default), without counting as a change to it. */
+export async function setPageIcon(pageId: string, icon: string | null): Promise<void> {
+	await sqlite
+		.update(page)
+		.set({ icon, updatedAt: sql`${page.updatedAt}` })
+		.where(eq(page.id, pageId));
 }

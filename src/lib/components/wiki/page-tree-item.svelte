@@ -12,12 +12,16 @@
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import SmilePlusIcon from '@lucide/svelte/icons/smile-plus';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import NewPageDialog from './new-page-dialog.svelte';
 	import MoveDialog from './move-dialog.svelte';
 	import AccessDialog from './access-dialog.svelte';
+	import PageIconPicker from './page-icon-picker.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { pageIcon } from '$lib/page-icons';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { page as currentPage } from '$app/state';
@@ -47,6 +51,8 @@
 	const isActive = $derived(currentPage.url.pathname === href);
 	const isAncestorOfActive = $derived(currentPage.url.pathname.startsWith(href + '/'));
 	const title = $derived(node.page?.title ?? node.name);
+	// The page's own icon, or the default one for a page.
+	const PageIcon = $derived(pageIcon(node.page?.icon)?.component ?? FileTextIcon);
 
 	// Opened for the open page — also when it's reached by a link later on —
 	// and kept open (or closed) across visits, as the person left it.
@@ -61,6 +67,7 @@
 	let addOpen = $state(false);
 	let moveOpen = $state(false);
 	let accessOpen = $state(false);
+	let iconOpen = $state(false);
 
 	// Shown while this row is hovered (or reached by keyboard, or its menu is
 	// open). Not shadcn's showOnHover: that reacts to any menu item around
@@ -156,6 +163,12 @@
 							{/snippet}
 						</DropdownMenu.Item>
 					{/if}
+					{#if node.page}
+						<DropdownMenu.Item onclick={() => (iconOpen = true)}>
+							<SmilePlusIcon />
+							Icon ändern …
+						</DropdownMenu.Item>
+					{/if}
 					<DropdownMenu.Item onclick={() => (moveOpen = true)}>
 						<FolderInputIcon />
 						Verschieben …
@@ -180,7 +193,7 @@
 					<Sidebar.MenuButton {isActive} class="flex-1">
 						{#snippet child({ props })}
 							<a {...props} {href}>
-								<FileTextIcon />
+								<PageIcon />
 								<span>{node.page?.title}</span>
 							</a>
 						{/snippet}
@@ -222,7 +235,7 @@
 			<Sidebar.MenuButton {isActive} class="flex-1">
 				{#snippet child({ props })}
 					<a {...props} {href}>
-						<FileTextIcon />
+						<PageIcon />
 						<span>{title}</span>
 					</a>
 				{/snippet}
@@ -238,6 +251,20 @@
 	{#if moveOpen}
 		<MoveDialog bind:open={moveOpen} path={node.fullPath} {title} {pagePaths} />
 	{/if}
+{/if}
+{#if canEdit && node.page && iconOpen}
+	<Dialog.Root bind:open={iconOpen}>
+		<Dialog.Content class="sm:max-w-sm">
+			<Dialog.Header>
+				<Dialog.Title>Icon für „{title}“</Dialog.Title>
+			</Dialog.Header>
+			<PageIconPicker
+				pageId={node.page.id}
+				value={node.page.icon}
+				onpicked={() => (iconOpen = false)}
+			/>
+		</Dialog.Content>
+	</Dialog.Root>
 {/if}
 {#if canManageAccess && accessOpen}
 	<AccessDialog bind:open={accessOpen} path={node.fullPath} {title} />

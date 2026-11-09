@@ -23,6 +23,9 @@ export const page = sqliteTable(
 		// Denormalized from the latest page_version, so the sidebar and page
 		// listing don't need a join/window-function per page.
 		title: text('title').notNull(),
+		// The icon shown beside the title in the tree and above the page (a name
+		// from page-icons.ts); null for the default. Not versioned, like the cover.
+		icon: text('icon'),
 		createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
 		createdAt: timestampMs('created_at').notNull(),
 		updatedAt: timestampMs('updated_at')

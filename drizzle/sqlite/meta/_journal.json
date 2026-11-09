@@ -99,6 +99,13 @@
       "when": 1794059360833,
       "tag": "0013_tree_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1794224286452,
+      "tag": "0014_page_icon",
+      "breakpoints": true
     }
   ]
 }

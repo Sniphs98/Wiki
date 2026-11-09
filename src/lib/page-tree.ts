@@ -1,6 +1,8 @@
 export interface PageTreePage {
 	id: string;
 	title: string;
+	/** A name from page-icons.ts, null for the default. */
+	icon: string | null;
 	updatedAt: Date;
 }
 
@@ -17,6 +19,7 @@ interface PageLike {
 	id: string;
 	path: string;
 	title: string;
+	icon?: string | null;
 	updatedAt: Date;
 }
 
@@ -48,7 +51,7 @@ export function buildPageTree(pages: PageLike[], pinned: string[] = []): PageTre
 			}
 
 			if (index === segments.length - 1) {
-				node.page = { id: p.id, title: p.title, updatedAt: p.updatedAt };
+				node.page = { id: p.id, title: p.title, icon: p.icon ?? null, updatedAt: p.updatedAt };
 			}
 
 			level = node.children;
