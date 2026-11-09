@@ -48,6 +48,8 @@ While editing, the row with **Löschen**, **Abbrechen** and **Speichern** (Delet
 
 **PDF** on a page opens the export settings: with subpages (the whole area), with a table of contents, and with a title page of your own. **Ganzes Wiki als PDF** (Whole wiki as PDF) on the start page exports everything, cover included. A page's buttons (PDF, page breaks, history, edit) sit to the left of the text, or above it in narrow windows.
 
+**Breiter Text** (Wide text), next to the page-break button on a page and in the editor, lets the text use the whole width of the window instead of the PDF's A4 column. The choice is remembered per browser; page-break lines only show in the A4 column.
+
 You design the **title page** right in the export dialog, on an A4 sheet, with the regular editor: heading, text, a logo or other images (drag a corner to resize) — just like on a wiki page. The sheet shows margins and proportions as in the PDF; the content can be aligned horizontally (left/center) and vertically (top/center/bottom), e.g. for a logo in the middle of the page. **Ganze Seite** shows the whole sheet, **100 %** its actual size. If the content doesn't fit on one page, the dialog says so. The title page is saved with the page on export and is there again next time; in the PDF it replaces the generated cover as page 1. With the title page switched off, the sheet stays visible, greyed out.
 
 The PDF isn't rebuilt from the content but produced from the real page: the same text width (A4 with margins), the same embedded fonts, the same editor. Lines therefore break at exactly the same places. Tables and long code blocks are split across pages row by row, and a table's header repeats on every page.
