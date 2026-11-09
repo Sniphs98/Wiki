@@ -51,7 +51,7 @@ test('the editor keeps unsaved changes when someone else saves', async ({ page, 
 	await openEditor(page, path);
 	await type(page, ' und mehr');
 
-	await saveElsewhere(page, baseURL!, path, '# Live-Edit\n\nVon jemand anderem');
+	await saveElsewhere(page, baseURL!, path, '# Live-Edit\n\nFassung von Bob');
 
 	await expect(notice(page)).toContainText('Deine Änderungen bleiben erhalten');
 	await expect(onPage(page, 'p')).toHaveText('Ursprung und mehr');
@@ -63,6 +63,6 @@ test('the editor keeps unsaved changes when someone else saves', async ({ page, 
 
 	await notice(page).getByRole('button', { name: 'Neue Version laden' }).click();
 	await page.getByRole('button', { name: 'Verwerfen und laden' }).click();
-	await expect(onPage(page, 'p')).toHaveText('Von jemand anderem');
+	await expect(onPage(page, 'p')).toHaveText('Fassung von Bob');
 	await expect(notice(page)).toBeHidden();
 });
