@@ -5,6 +5,7 @@
 	import PageActions from '$lib/components/wiki/page-actions.svelte';
 	import PdfExportDialog from '$lib/components/wiki/pdf-export-dialog.svelte';
 	import MoveDialog from '$lib/components/wiki/move-dialog.svelte';
+	import PageLiveUpdates from '$lib/components/wiki/page-live-updates.svelte';
 	import { pageAside } from '$lib/page-aside.svelte';
 	import { PRINT_TEXT_WIDTH } from '$lib/print-layout';
 	import { resolve } from '$app/paths';
@@ -113,6 +114,15 @@
 		</section>
 	{/if}
 </div>
+
+<!-- Started afresh on each page: what was news about the last one isn't about this one. -->
+{#key data.page.path}
+	<PageLiveUpdates
+		pageId={data.page.id}
+		path={data.page.path}
+		version={data.version.versionNumber}
+	/>
+{/key}
 
 {#if canEdit && moveOpen}
 	<MoveDialog
