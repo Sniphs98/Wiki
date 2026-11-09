@@ -173,11 +173,7 @@
 {/snippet}
 
 {#if isFolder}
-	<Collapsible.Root
-		bind:open
-		onOpenChange={(value) => treeOpenState.set(node.fullPath, value)}
-		class="group/collapsible"
-	>
+	<Collapsible.Root bind:open onOpenChange={(value) => treeOpenState.set(node.fullPath, value)}>
 		<Sidebar.MenuItem>
 			<div class="group/row relative flex items-center">
 				{#if node.page}
@@ -202,10 +198,7 @@
 				{@render actions()}
 				<Collapsible.Trigger>
 					{#snippet child({ props })}
-						<Sidebar.MenuAction
-							{...props}
-							class="transition-transform group-data-[state=open]/collapsible:rotate-90"
-						>
+						<Sidebar.MenuAction {...props} class="transition-transform data-[state=open]:rotate-90">
 							<ChevronRightIcon />
 						</Sidebar.MenuAction>
 					{/snippet}
