@@ -6,7 +6,7 @@
 	import PdfExportDialog from '$lib/components/wiki/pdf-export-dialog.svelte';
 	import MoveDialog from '$lib/components/wiki/move-dialog.svelte';
 	import { pageAside } from '$lib/page-aside.svelte';
-	import { PRINT_TEXT_WIDTH } from '$lib/print-layout';
+	import PageColumn from '$lib/components/wiki/page-column.svelte';
 	import { resolve } from '$app/paths';
 	import LinkIcon from '@lucide/svelte/icons/link';
 
@@ -43,7 +43,7 @@
 	<title>{data.version.title} · Wiki</title>
 </svelte:head>
 
-<div class="mx-auto box-content max-w-[calc(100%-4rem)] p-8" style:width={PRINT_TEXT_WIDTH}>
+<PageColumn>
 	<!-- Beside the text when there's room (the layout's side panel, see
 		 pageAside below), otherwise above it. -->
 	<div class="mb-2 flex justify-end @min-[1360px]:hidden">
@@ -112,7 +112,7 @@
 			</ul>
 		</section>
 	{/if}
-</div>
+</PageColumn>
 
 {#if canEdit && moveOpen}
 	<MoveDialog

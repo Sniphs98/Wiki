@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PageEditForm from '$lib/components/wiki/page-edit-form.svelte';
-	import { PRINT_TEXT_WIDTH } from '$lib/print-layout';
+	import PageColumn from '$lib/components/wiki/page-column.svelte';
 
 	let { data, form } = $props();
 
@@ -12,7 +12,7 @@
 	);
 </script>
 
-<div class="mx-auto box-content max-w-[calc(100%-4rem)] p-8" style:width={PRINT_TEXT_WIDTH}>
+<PageColumn>
 	{#key data.path}
 		<PageEditForm
 			path={data.path}
@@ -29,4 +29,4 @@
 			{conflictVersion}
 		/>
 	{/key}
-</div>
+</PageColumn>
