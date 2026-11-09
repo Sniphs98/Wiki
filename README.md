@@ -118,6 +118,8 @@ The service sees the text of all pages, including areas only a few people may re
 
 Every save creates a new version. In the history, every version can be viewed and restored.
 
+When someone else saves, moves or deletes the page you have open, a pop-up says so: **Aktualisieren** loads the new version, the text never changes by itself. In the editor, your unsaved changes stay — loading the new version asks first, and saving still asks before overwriting. The page tree follows new, moved and deleted pages on its own.
+
 ![Version history with two versions](docs/screenshots/verlauf.png)
 
 ### Dark mode
@@ -246,7 +248,7 @@ volumes:
   wikidata:
 ```
 
-On a domain of its own, a single router with `Host(`wiki.example.org`)` is enough, and `BASE_PATH` stays unset. Traefik has no upload limit by default; with another proxy, allow request bodies of at least 11 MB (e.g. nginx `client_max_body_size 11m;`) and a read timeout that a large PDF export fits into (a minute is plenty).
+On a domain of its own, a single router with `Host(`wiki.example.org`)` is enough, and `BASE_PATH` stays unset. Traefik has no upload limit by default; with another proxy, allow request bodies of at least 11 MB (e.g. nginx `client_max_body_size 11m;`) and a read timeout that a large PDF export fits into (a minute is plenty). Live updates (`/api/events`) are a long-lived Server-Sent Events response: the proxy must not buffer it (the wiki sends `X-Accel-Buffering: no` for nginx); a comment every 25 seconds keeps it from timing out.
 
 ## Configuration
 
@@ -358,6 +360,7 @@ Tags with a suffix such as `v1.2.0-rc.1` are published as pre-releases and don't
 - Files are stored as BLOBs in the database and served from `/api/files/[id]`.
 - **Links** (`src/lib/wiki-links.ts`, table `page_link`): every link is bound to the page id it meant when saved, so moves and renames don't break it; old paths of moved pages live in `page_redirect`.
 - **Search** (`src/lib/server/search`): full text in the database, plus optional semantic search — pages are cut into sections (`semantic/chunks.ts`), embedded in the background, compared in memory and merged with the full-text results by reciprocal rank fusion.
+- **Live updates** (`src/lib/server/live-events.ts`, `src/lib/live-updates.ts`): page writes publish a change in memory, `/api/events` passes it on as Server-Sent Events to each open tab — only for pages that visitor may read. Reconnecting tabs get what they missed (Last-Event-ID). In memory means one server process: several behind a load balancer would each only see their own changes.
 - **MCP server** for AI assistants at `/mcp` (`src/lib/server/mcp`, the official MCP SDK, stateless over Streamable HTTP), protected by OAuth — Better Auth's `mcp()` plugin makes the wiki the OAuth server too (consent page at `/consent`).
 
 ## Not done yet
