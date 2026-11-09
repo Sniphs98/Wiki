@@ -56,3 +56,40 @@ test('only icons from the list are stored', async ({ request }) => {
 	});
 	expect(response.status()).toBe(400);
 });
+
+test('an uploaded icon can be picked for pages, and deleted again', async ({ page, request }) => {
+	const { path, title } = await newPage(request);
+	const name = `logo-${Date.now().toString(36)}`;
+	await page.goto(`/w/${path}`);
+	const row = page.locator('[data-sidebar="menu-button"]', { hasText: title });
+
+	await page.getByRole('button', { name: 'Icon hinzufügen' }).click();
+	await page.getByLabel('Icon hochladen').setInputFiles({
+		name: `${name}.svg`,
+		mimeType: 'image/svg+xml',
+		buffer: Buffer.from(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>'
+		)
+	});
+	// Uploading gives it to the page right away.
+	await expect(page.getByRole('button', { name: `Icon ändern: ${name}` })).toBeVisible();
+	await expect(row.locator('[data-page-icon="custom"]')).toBeVisible();
+
+	// Offered for other pages too, and gone from all of them once deleted.
+	await page.getByRole('button', { name: `Icon ändern: ${name}` }).click();
+	await expect(page.getByRole('option', { name })).toHaveAttribute('aria-selected', 'true');
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.getByRole('option', { name }).hover();
+	await page.getByRole('button', { name: `Icon löschen: ${name}` }).click();
+	await expect(page.getByRole('option', { name })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(row.locator('svg.lucide-file-text')).toBeVisible();
+});
+
+test('only images are taken as icons', async ({ request }) => {
+	const response = await request.post('/api/icons', {
+		multipart: { file: { name: 'x.html', mimeType: 'text/html', buffer: Buffer.from('<b>') } },
+		headers: { origin: baseURL }
+	});
+	expect(response.status()).toBe(415);
+});

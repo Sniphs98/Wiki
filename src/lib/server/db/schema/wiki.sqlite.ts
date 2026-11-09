@@ -73,6 +73,19 @@ export const attachment = sqliteTable(
 	(table) => [index('attachment_page_id_idx').on(table.pageId)]
 );
 
+/**
+ * Icons uploaded for pages to pick (page-icons.ts), next to the built-in
+ * ones: for everyone, until deleted. A page refers to one as `custom:<id>`.
+ */
+export const customIcon = sqliteTable('custom_icon', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	mimeType: text('mime_type').notNull(),
+	data: blob('data', { mode: 'buffer' }).notNull(),
+	uploadedBy: text('uploaded_by').references(() => user.id, { onDelete: 'set null' }),
+	createdAt: timestampMs('created_at').notNull()
+});
+
 export const pageRelations = relations(page, ({ many, one }) => ({
 	versions: many(pageVersion),
 	attachments: many(attachment),

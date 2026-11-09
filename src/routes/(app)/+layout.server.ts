@@ -3,6 +3,7 @@ import { getUserPreferences } from '$lib/server/repo/preferences';
 import { countNotes } from '$lib/server/repo/inbox';
 import { pinnedPaths } from '$lib/server/repo/pins';
 import { loginEnabled } from '$lib/server/login';
+import { customIconsFor } from '$lib/server/custom-icons';
 import { bootId, cursor } from '$lib/server/live-events';
 import { SIDEBAR_WIDTH_COOKIE_NAME, clampSidebarWidth } from '$lib/components/ui/sidebar/constants';
 import type { LayoutServerLoad } from './$types';
@@ -15,10 +16,11 @@ export const load: LayoutServerLoad = async (event) => {
 	const pages = event.locals.access.readable(await listPages());
 
 	const user = event.locals.user;
-	const [preferences, inboxCount, pinned] = await Promise.all([
+	const [preferences, inboxCount, pinned, customIcons] = await Promise.all([
 		user ? getUserPreferences(user.id) : null,
 		user ? countNotes(user.id) : 0,
-		pinnedPaths()
+		pinnedPaths(),
+		customIconsFor(event.locals)
 	]);
 
 	return {
@@ -32,6 +34,8 @@ export const load: LayoutServerLoad = async (event) => {
 		loginEnabled,
 		/** Pages and folders an admin pinned in the tree, for everyone. */
 		pinned,
+		/** Icons uploaded for pages (page-icon-glyph.svelte), next to the built-in ones. */
+		customIcons,
 		/** Where the changes stood when this was loaded (GET /api/events?since=). */
 		liveCursor,
 		toolbar: preferences?.toolbar ?? null,

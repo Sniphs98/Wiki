@@ -76,6 +76,19 @@ export const attachment = pgTable(
 	(table) => [index('attachment_page_id_idx').on(table.pageId)]
 );
 
+/**
+ * Icons uploaded for pages to pick (page-icons.ts), next to the built-in
+ * ones: for everyone, until deleted. A page refers to one as `custom:<id>`.
+ */
+export const customIcon = pgTable('custom_icon', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	mimeType: text('mime_type').notNull(),
+	data: bytea('data').notNull(),
+	uploadedBy: text('uploaded_by').references(() => user.id, { onDelete: 'set null' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
 export const pageRelations = relations(page, ({ many, one }) => ({
 	versions: many(pageVersion),
 	attachments: many(attachment),

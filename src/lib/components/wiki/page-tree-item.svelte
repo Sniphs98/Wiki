@@ -21,7 +21,7 @@
 	import AccessDialog from './access-dialog.svelte';
 	import PageIconPicker from './page-icon-picker.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import { pageIcon } from '$lib/page-icons';
+	import PageIconGlyph from './page-icon-glyph.svelte';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { page as currentPage } from '$app/state';
@@ -51,8 +51,6 @@
 	const isActive = $derived(currentPage.url.pathname === href);
 	const isAncestorOfActive = $derived(currentPage.url.pathname.startsWith(href + '/'));
 	const title = $derived(node.page?.title ?? node.name);
-	// The page's own icon, or the default one for a page.
-	const PageIcon = $derived(pageIcon(node.page?.icon)?.component ?? FileTextIcon);
 
 	// Opened for the open page — also when it's reached by a link later on —
 	// and kept open (or closed) across visits, as the person left it.
@@ -193,7 +191,7 @@
 					<Sidebar.MenuButton {isActive} class="flex-1">
 						{#snippet child({ props })}
 							<a {...props} {href}>
-								<PageIcon />
+								<PageIconGlyph icon={node.page?.icon} fallback={FileTextIcon} />
 								<span>{node.page?.title}</span>
 							</a>
 						{/snippet}
@@ -235,7 +233,7 @@
 			<Sidebar.MenuButton {isActive} class="flex-1">
 				{#snippet child({ props })}
 					<a {...props} {href}>
-						<PageIcon />
+						<PageIconGlyph icon={node.page?.icon} fallback={FileTextIcon} />
 						<span>{title}</span>
 					</a>
 				{/snippet}

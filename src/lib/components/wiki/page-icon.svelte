@@ -6,9 +6,12 @@
 -->
 <script lang="ts">
 	import SmilePlusIcon from '@lucide/svelte/icons/smile-plus';
+	import { page } from '$app/state';
 	import * as Popover from '$lib/components/ui/popover';
 	import PageIconPicker from './page-icon-picker.svelte';
+	import PageIconGlyph from './page-icon-glyph.svelte';
 	import { pageIcon } from '$lib/page-icons';
+	import { customIconId, type CustomIcon } from '$lib/custom-icons';
 	import { cn } from '$lib/utils';
 
 	let {
@@ -17,12 +20,19 @@
 		canEdit = false
 	}: {
 		pageId: string;
-		/** A name from page-icons.ts, null for the default. */
+		/** The page's icon value, null for the default. */
 		icon: string | null;
 		canEdit?: boolean;
 	} = $props();
 
-	const current = $derived(pageIcon(icon));
+	/** The icon's name, if it's one that's (still) there. */
+	const label = $derived.by(() => {
+		const builtIn = pageIcon(icon);
+		if (builtIn) return builtIn.label;
+		const id = customIconId(icon);
+		const icons = (page.data.customIcons ?? []) as CustomIcon[];
+		return icons.find((c) => c.id === id)?.name;
+	});
 	let open = $state(false);
 </script>
 
@@ -31,15 +41,15 @@
 		<Popover.Trigger
 			class={cn(
 				'mb-2 inline-flex items-center gap-1.5 rounded-md transition-colors hover:bg-accent',
-				current
+				label
 					? 'p-1'
 					: 'px-2 py-1 text-sm text-muted-foreground group-hover/header:opacity-100 hover:text-accent-foreground focus-visible:opacity-100 data-[state=open]:opacity-100 md:opacity-0'
 			)}
-			title={current ? `Icon ändern (${current.label})` : 'Icon hinzufügen'}
+			title={label ? `Icon ändern (${label})` : 'Icon hinzufügen'}
 		>
-			{#if current}
-				<current.component class="size-10" aria-hidden="true" />
-				<span class="sr-only">Icon ändern: {current.label}</span>
+			{#if label}
+				<PageIconGlyph {icon} class="size-10" />
+				<span class="sr-only">Icon ändern: {label}</span>
 			{:else}
 				<SmilePlusIcon class="size-4" />
 				Icon hinzufügen
@@ -49,8 +59,8 @@
 			<PageIconPicker {pageId} value={icon} onpicked={() => (open = false)} />
 		</Popover.Content>
 	</Popover.Root>
-{:else if current}
-	<div class="mb-2 p-1" data-page-icon={current.name}>
-		<current.component class="size-10" role="img" aria-label={current.label} />
+{:else if label}
+	<div class="mb-2 p-1">
+		<PageIconGlyph {icon} class="size-10" {label} />
 	</div>
 {/if}
