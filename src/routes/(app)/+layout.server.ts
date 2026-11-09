@@ -3,9 +3,14 @@ import { getUserPreferences } from '$lib/server/repo/preferences';
 import { countNotes } from '$lib/server/repo/inbox';
 import { pinnedPaths } from '$lib/server/repo/pins';
 import { loginEnabled } from '$lib/server/login';
+import { bootId, cursor } from '$lib/server/live-events';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
+	// Reloaded on its own when the tree changes (live-updates.ts).
+	event.depends('wiki:tree');
+	// Taken before reading, so a change made meanwhile is heard of, not missed.
+	const liveCursor = `${bootId}:${cursor()}`;
 	const pages = event.locals.access.readable(await listPages());
 
 	const user = event.locals.user;
@@ -26,6 +31,8 @@ export const load: LayoutServerLoad = async (event) => {
 		loginEnabled,
 		/** Pages and folders an admin pinned in the tree, for everyone. */
 		pinned,
+		/** Where the changes stood when this was loaded (GET /api/events?since=). */
+		liveCursor,
 		toolbar: preferences?.toolbar ?? null
 	};
 };

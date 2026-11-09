@@ -18,6 +18,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { basePath, withBase } from '$lib/base-path';
+	import { connectLiveUpdates } from '$lib/live-updates';
+	import { untrack } from 'svelte';
 
 	let { data, children } = $props();
 
@@ -26,6 +28,10 @@
 	$effect(() => {
 		toolbarSetting.init(data.toolbar, !!data.user);
 	});
+
+	// Hear of changes others make while this tab is open (live-updates.ts).
+	// Connected once: the cursor only says where the first page load stood.
+	$effect(() => untrack(() => connectLiveUpdates(data.liveCursor)));
 
 	let contentArea: HTMLElement | undefined = $state();
 
