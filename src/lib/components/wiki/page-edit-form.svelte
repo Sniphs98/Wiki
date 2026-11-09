@@ -16,6 +16,9 @@
 	import { parseTags } from '$lib/tags';
 	import type { AttachmentMeta } from '$lib/server/repo/attachments';
 	import { withBase } from '$lib/base-path';
+	import { untrack } from 'svelte';
+	import { onPageChange, type PageChange } from '$lib/live-updates';
+	import LiveUpdateNotice from './live-update-notice.svelte';
 
 	let {
 		path,
@@ -29,7 +32,8 @@
 		nextVersionNumber,
 		attachments,
 		errorMessage,
-		conflictVersion
+		conflictVersion,
+		onreload
 	}: {
 		path: string;
 		pageId?: string;
@@ -46,7 +50,16 @@
 		errorMessage?: string;
 		/** Set when someone else saved meanwhile: the version that would be overwritten. */
 		conflictVersion?: number;
+		/** Loads the page's newest version into a fresh editor (the changes here are gone). */
+		onreload?: () => Promise<void>;
 	} = $props();
+
+	/**
+	 * The version this edit started from. Kept, even when the page's data
+	 * is loaded again (e.g. after an upload): a newer version saved
+	 * meanwhile must still make the save ask first.
+	 */
+	const baseVersion = untrack(() => nextVersionNumber - 1);
 
 	/** The title is the heading on the first line: a new page starts with it. */
 	function initialContent() {
@@ -112,6 +125,44 @@
 		leaveTo = { url: to.url, delta: type === 'popstate' ? delta : undefined };
 	});
 
+	// Someone else saved, moved or deleted this page while it's open here
+	// (live-updates.ts). Said in a pop-up; the text here stays as it is.
+	let remote = $state<PageChange | null>(null);
+	let remoteDismissed = $state<PageChange | null>(null);
+	/** Whether there were unsaved changes here when the news came. */
+	let dirtyAtNotice = $state(false);
+	let confirmReload = $state(false);
+	let reloading = $state(false);
+
+	$effect(() =>
+		onPageChange((change) => {
+			// Our own save, move or delete: we're on our way to its result.
+			if (!pageId || change.pageId !== pageId || saving || deleting) return;
+			if (change.movedTo === path) return;
+			if (remote?.deleted || remote?.movedTo) return;
+			if (!change.deleted && !change.movedTo && (change.version ?? 0) <= baseVersion) return;
+			remote = change;
+			dirtyAtNotice = hasChanges();
+		})
+	);
+
+	const remoteNotice = $derived(remote && remote !== remoteDismissed ? remote : null);
+
+	function askReload() {
+		if (hasChanges()) confirmReload = true;
+		else void reload();
+	}
+
+	async function reload() {
+		confirmReload = false;
+		reloading = true;
+		try {
+			await onreload?.();
+		} finally {
+			reloading = false;
+		}
+	}
+
 	function discardAndLeave() {
 		if (!leaveTo) return;
 		const { url, delta } = leaveTo;
@@ -152,7 +203,7 @@
 
 	<input type="hidden" name="content" value={content} />
 	<!-- The version this edit is based on; the save is refused if the page has moved on. -->
-	<input type="hidden" name="baseVersion" value={nextVersionNumber - 1} />
+	<input type="hidden" name="baseVersion" value={baseVersion} />
 
 	<div class="flex justify-end">
 		<PageBreakToggle />
@@ -281,6 +332,70 @@
 		Speichere die Seite einmal, um Bilder oder Dateien einzufügen.
 	</p>
 {/if}
+
+{#if remoteNotice}
+	<LiveUpdateNotice ondismiss={() => (remoteDismissed = remote)}>
+		{#if remoteNotice.deleted}
+			Jemand hat diese Seite gerade gelöscht. Wenn du speicherst, wird sie neu angelegt.
+		{:else if remoteNotice.movedTo}
+			Jemand hat diese Seite gerade nach „{remoteNotice.movedTo}“ verschoben. Kopiere deine
+			Änderungen und öffne sie dort neu.
+		{:else if dirtyAtNotice}
+			Jemand hat diese Seite gerade gespeichert (jetzt Version {remoteNotice.version}). Deine
+			Änderungen bleiben erhalten – beim Speichern wirst du gefragt, ob du die neue Version
+			überschreiben willst.
+		{:else}
+			Jemand hat diese Seite gerade gespeichert (jetzt Version {remoteNotice.version}).
+		{/if}
+		{#snippet actions()}
+			{#if remoteNotice?.movedTo}
+				<Button
+					size="sm"
+					variant="outline"
+					href={resolve('/(app)/w/[...path]', { path: remoteNotice.movedTo })}
+					target="_blank"
+				>
+					Neue Adresse öffnen
+				</Button>
+			{:else if !remoteNotice?.deleted}
+				<Button
+					size="sm"
+					variant={dirtyAtNotice ? 'outline' : 'default'}
+					onclick={askReload}
+					disabled={reloading}
+				>
+					{reloading ? 'Lädt …' : 'Neue Version laden'}
+				</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					href={resolve('/(app)/w/[...path]', { path })}
+					target="_blank"
+				>
+					In neuem Tab ansehen
+				</Button>
+			{/if}
+		{/snippet}
+	</LiveUpdateNotice>
+{/if}
+
+<AlertDialog.Root bind:open={confirmReload}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Neue Version laden?</AlertDialog.Title>
+			<AlertDialog.Description>
+				Deine Änderungen an dieser Seite sind noch nicht gespeichert. Wenn du die neue Version
+				lädst, gehen sie verloren.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Weiter bearbeiten</AlertDialog.Cancel>
+			<AlertDialog.Action variant="destructive" onclick={reload}>
+				Verwerfen und laden
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
 <AlertDialog.Root
 	open={leaveTo !== null}
