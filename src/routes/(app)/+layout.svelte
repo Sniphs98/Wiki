@@ -47,7 +47,8 @@
 
 <!-- h-svh: the window never scrolls — only <main> does, below the fixed
 	 header (and the editor toolbar sticks to the top of <main>). -->
-<Sidebar.Provider class="h-svh">
+<!-- The page tree's edge can be dragged; the width is kept in a cookie. -->
+<Sidebar.Provider class="h-svh" width={data.sidebarWidth}>
 	<PageSidebar
 		pages={data.pages}
 		{canEdit}

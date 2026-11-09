@@ -3,6 +3,7 @@ import { getUserPreferences } from '$lib/server/repo/preferences';
 import { countNotes } from '$lib/server/repo/inbox';
 import { pinnedPaths } from '$lib/server/repo/pins';
 import { loginEnabled } from '$lib/server/login';
+import { SIDEBAR_WIDTH_COOKIE_NAME, clampSidebarWidth } from '$lib/components/ui/sidebar/constants';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -26,6 +27,8 @@ export const load: LayoutServerLoad = async (event) => {
 		loginEnabled,
 		/** Pages and folders an admin pinned in the tree, for everyone. */
 		pinned,
-		toolbar: preferences?.toolbar ?? null
+		toolbar: preferences?.toolbar ?? null,
+		/** The width the page tree was dragged to (per browser), null for the default. */
+		sidebarWidth: clampSidebarWidth(event.cookies.get(SIDEBAR_WIDTH_COOKIE_NAME))
 	};
 };
