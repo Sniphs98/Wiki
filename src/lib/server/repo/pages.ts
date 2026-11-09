@@ -14,6 +14,13 @@ export const getPagePath = impl.getPagePath;
 export const listVersions = impl.listVersions;
 export const redirectFor = impl.redirectFor;
 
+/** Sets a page's icon (null: the default) and tells open tabs, whose tree shows it. */
+export async function setPageIcon(pageId: string, icon: string | null): Promise<void> {
+	await impl.setPageIcon(pageId, icon);
+	const path = await impl.getPagePath(pageId);
+	if (path) publish({ type: 'tree', paths: [path] });
+}
+
 // Writes keep the search index and the links (backlinks.ts) in step with the
 // pages, and tell open tabs about the change (live-events.ts).
 

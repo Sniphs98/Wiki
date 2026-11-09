@@ -42,6 +42,12 @@ describe('buildPageTree', () => {
 });
 
 describe('findNode', () => {
+	it("carries each page's icon, null without one", () => {
+		const [withIcon, without] = buildPageTree([{ ...page('a'), icon: 'rocket' }, page('b')]);
+		expect(withIcon.page?.icon).toBe('rocket');
+		expect(without.page?.icon).toBeNull();
+	});
+
 	it('finds a folder or page by path', () => {
 		const tree = buildPageTree([page('anleitung/editor/tabellen'), page('it')]);
 		expect(findNode(tree, 'anleitung/editor')?.children.map((n) => n.name)).toEqual(['tabellen']);

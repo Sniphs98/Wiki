@@ -25,6 +25,9 @@ export const page = pgTable(
 		// Denormalized from the latest page_version, so the sidebar and page
 		// listing don't need a join/window-function per page.
 		title: text('title').notNull(),
+		// The icon shown beside the title in the tree and above the page (a name
+		// from page-icons.ts); null for the default. Not versioned, like the cover.
+		icon: text('icon'),
 		createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at')
@@ -72,6 +75,19 @@ export const attachment = pgTable(
 	},
 	(table) => [index('attachment_page_id_idx').on(table.pageId)]
 );
+
+/**
+ * Icons uploaded for pages to pick (page-icons.ts), next to the built-in
+ * ones: for everyone, until deleted. A page refers to one as `custom:<id>`.
+ */
+export const customIcon = pgTable('custom_icon', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	mimeType: text('mime_type').notNull(),
+	data: bytea('data').notNull(),
+	uploadedBy: text('uploaded_by').references(() => user.id, { onDelete: 'set null' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
 
 export const pageRelations = relations(page, ({ many, one }) => ({
 	versions: many(pageVersion),

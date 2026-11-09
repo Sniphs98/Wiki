@@ -2,6 +2,8 @@ export interface PageSummary {
 	id: string;
 	path: string;
 	title: string;
+	/** A name from page-icons.ts, null for the default. */
+	icon: string | null;
 	updatedAt: Date;
 }
 
