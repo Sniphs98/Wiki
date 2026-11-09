@@ -7,6 +7,7 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import { Button } from '$lib/components/ui/button';
 	import PageBreakToggle from './page-break-toggle.svelte';
+	import WideTextToggle from './wide-text-toggle.svelte';
 	import { resolve } from '$app/paths';
 	import { cn } from '$lib/utils';
 	import { withBase } from '$lib/base-path';
@@ -48,6 +49,7 @@
 		PDF
 	</Button>
 	<PageBreakToggle class={item} />
+	<WideTextToggle class={item} />
 	<Button
 		variant="ghost"
 		class={item}

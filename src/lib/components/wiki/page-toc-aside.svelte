@@ -2,6 +2,7 @@
 	import { pageToc } from '$lib/page-toc.svelte';
 	import { cn } from '$lib/utils';
 	import { pageAside } from '$lib/page-aside.svelte';
+	import { wideTextSetting } from '$lib/wide-text-setting.svelte';
 
 	/**
 	 * "Auf dieser Seite": the open page's headings in a panel to the right of
@@ -18,8 +19,13 @@
 {#if pageAside.actions}
 	<!-- Just left of the text column (centered, 2 × 336px wide incl. its
 		 padding). -->
+	<!-- In the wide text mode at the left edge, the text column leaves room
+		 for it (page-column.svelte). -->
 	<aside
-		class="pointer-events-none absolute inset-y-0 right-[calc(50%+23rem)] hidden w-56 pt-8 @min-[1360px]:block"
+		class={[
+			'pointer-events-none absolute inset-y-0 hidden w-56 pt-8 @min-[1360px]:block',
+			wideTextSetting.wide ? 'left-8' : 'right-[calc(50%+23rem)]'
+		]}
 	>
 		<div class="pointer-events-auto sticky top-8">
 			{@render pageAside.actions()}
@@ -30,8 +36,13 @@
 {#if entries.length > 0}
 	<!-- Just right of the text column (centered, 2 × 336px wide incl. its
 		 padding) and the page-break labels in its margin. -->
+	<!-- In the wide text mode at the right edge, the text column leaves room
+		 for it (page-column.svelte). -->
 	<aside
-		class="pointer-events-none absolute inset-y-0 left-[calc(50%+25.5rem)] hidden w-60 pt-8 @min-[1360px]:block"
+		class={[
+			'pointer-events-none absolute inset-y-0 hidden w-60 pt-8 @min-[1360px]:block',
+			wideTextSetting.wide ? 'right-8' : 'left-[calc(50%+25.5rem)]'
+		]}
 	>
 		<nav
 			aria-label="Auf dieser Seite"

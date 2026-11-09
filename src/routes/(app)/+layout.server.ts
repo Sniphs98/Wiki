@@ -4,6 +4,7 @@ import { countNotes } from '$lib/server/repo/inbox';
 import { pinnedPaths } from '$lib/server/repo/pins';
 import { loginEnabled } from '$lib/server/login';
 import { bootId, cursor } from '$lib/server/live-events';
+import { SIDEBAR_WIDTH_COOKIE_NAME, clampSidebarWidth } from '$lib/components/ui/sidebar/constants';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -33,6 +34,8 @@ export const load: LayoutServerLoad = async (event) => {
 		pinned,
 		/** Where the changes stood when this was loaded (GET /api/events?since=). */
 		liveCursor,
-		toolbar: preferences?.toolbar ?? null
+		toolbar: preferences?.toolbar ?? null,
+		/** The width the page tree was dragged to (per browser), null for the default. */
+		sidebarWidth: clampSidebarWidth(event.cookies.get(SIDEBAR_WIDTH_COOKIE_NAME))
 	};
 };

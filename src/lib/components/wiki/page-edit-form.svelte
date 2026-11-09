@@ -10,6 +10,7 @@
 	import MarkdownEditor from './markdown-editor.svelte';
 	import PageBreakMarkers from './page-break-markers.svelte';
 	import PageBreakToggle from './page-break-toggle.svelte';
+	import WideTextToggle from './wide-text-toggle.svelte';
 	import { toolbarSetting } from '$lib/toolbar-setting.svelte';
 	import UnlinkedFiles from './unlinked-files.svelte';
 	import { titleFromMarkdown } from '$lib/page-title';
@@ -205,7 +206,8 @@
 	<!-- The version this edit is based on; the save is refused if the page has moved on. -->
 	<input type="hidden" name="baseVersion" value={baseVersion} />
 
-	<div class="flex justify-end">
+	<div class="flex justify-end gap-2">
+		<WideTextToggle />
 		<PageBreakToggle />
 	</div>
 
