@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageEditForm from '$lib/components/wiki/page-edit-form.svelte';
 	import PageColumn from '$lib/components/wiki/page-column.svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data, form } = $props();
 
@@ -10,10 +11,18 @@
 			? form.conflictVersion
 			: undefined
 	);
+
+	/** Counts "Neue Version laden": each starts the form afresh on the reloaded data. */
+	let reloads = $state(0);
+
+	async function reload() {
+		await invalidateAll();
+		reloads++;
+	}
 </script>
 
 <PageColumn>
-	{#key data.path}
+	{#key `${data.path}#${reloads}`}
 		<PageEditForm
 			path={data.path}
 			pageId={data.page?.id}
@@ -27,6 +36,7 @@
 			attachments={data.attachments}
 			errorMessage={form?.message}
 			{conflictVersion}
+			onreload={reload}
 		/>
 	{/key}
 </PageColumn>

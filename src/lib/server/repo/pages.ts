@@ -1,6 +1,7 @@
 import { dbDialect } from '$lib/server/db';
 import { indexPage, removePageFromIndex } from '$lib/server/search';
 import { bindTargets, linkTargets } from '$lib/wiki-links';
+import { publish } from '$lib/server/live-events';
 import { bindUnbound, linksOf, setLinks } from './links';
 import type { AddVersionInput, CreatePageInput, PageMove } from './pages.types';
 
@@ -13,7 +14,8 @@ export const getPagePath = impl.getPagePath;
 export const listVersions = impl.listVersions;
 export const redirectFor = impl.redirectFor;
 
-// Writes keep the search index and the links (backlinks.ts) in step with the pages.
+// Writes keep the search index and the links (backlinks.ts) in step with the
+// pages, and tell open tabs about the change (live-events.ts).
 
 export async function createPage(input: CreatePageInput): Promise<string> {
 	const pageId = await impl.createPage(input);
@@ -22,6 +24,8 @@ export async function createPage(input: CreatePageInput): Promise<string> {
 	await updateLinks(pageId, input.content);
 	await bindWaitingLinks(pageId, input.path, input.title);
 	await indexPage(pageId);
+	publish({ type: 'page', pageId, path: input.path, version: 1 });
+	publish({ type: 'tree', paths: [input.path] });
 	return pageId;
 }
 
@@ -31,12 +35,22 @@ export async function addPageVersion(input: AddVersionInput): Promise<number> {
 	const path = await impl.getPagePath(input.pageId);
 	if (path) await bindWaitingLinks(input.pageId, path, input.title);
 	await indexPage(input.pageId);
+	if (path) {
+		publish({ type: 'page', pageId: input.pageId, path, version: versionNumber });
+		// The title, and with it the tree, may have changed.
+		publish({ type: 'tree', paths: [path] });
+	}
 	return versionNumber;
 }
 
 export async function deletePage(pageId: string): Promise<void> {
+	const path = await impl.getPagePath(pageId);
 	await impl.deletePage(pageId);
 	await removePageFromIndex(pageId);
+	if (path) {
+		publish({ type: 'page', pageId, path, deleted: true });
+		publish({ type: 'tree', paths: [path] });
+	}
 }
 
 /**
@@ -46,6 +60,10 @@ export async function deletePage(pageId: string): Promise<void> {
 export async function movePages(moves: PageMove[]): Promise<void> {
 	await impl.movePages(moves);
 	for (const move of moves) await indexPage(move.pageId);
+	for (const move of moves) {
+		publish({ type: 'page', pageId: move.pageId, path: move.from, movedTo: move.to });
+	}
+	publish({ type: 'tree', paths: moves.flatMap((move) => [move.from, move.to]) });
 }
 
 /**
