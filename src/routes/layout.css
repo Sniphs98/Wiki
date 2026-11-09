@@ -140,6 +140,47 @@
 	}
 }
 
+/* Native scrollbars in the app's look: a thin, rounded thumb in the muted
+   tone (like the ScrollArea thumb), no visible track, following light/dark.
+   Firefox and Chromium use the standard properties; Safari only knows the
+   ::-webkit-scrollbar pseudo-elements. Chromium ignores those as soon as
+   scrollbar-color is set, so they are scoped to browsers without it. */
+:root {
+	--scrollbar-thumb: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+	--scrollbar-thumb-hover: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+}
+.dark {
+	color-scheme: dark;
+}
+/* In the base layer, so utilities like no-scrollbar still win. */
+@layer base {
+	@supports (scrollbar-color: auto) {
+		* {
+			scrollbar-width: thin;
+			scrollbar-color: var(--scrollbar-thumb) transparent;
+		}
+	}
+	@supports not (scrollbar-color: auto) {
+		::-webkit-scrollbar {
+			width: 10px;
+			height: 10px;
+		}
+		::-webkit-scrollbar-track,
+		::-webkit-scrollbar-corner {
+			background: transparent;
+		}
+		::-webkit-scrollbar-thumb {
+			border: 2px solid transparent;
+			border-radius: 9999px;
+			background-color: var(--scrollbar-thumb);
+			background-clip: padding-box;
+		}
+		::-webkit-scrollbar-thumb:hover {
+			background-color: var(--scrollbar-thumb-hover);
+		}
+	}
+}
+
 /* A PDF title page's text area (src/lib/cover.ts): in the export dialog's
    A4 preview and in the PDF alike, its content is aligned as chosen. */
 .wiki-cover-page {
