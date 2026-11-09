@@ -18,6 +18,12 @@ export type SidebarStateProps = {
 	 * the sub-components and any `bind:` references.
 	 */
 	setOpen: (open: boolean) => void;
+
+	/** The width the person dragged the sidebar to (px), or null for the default. */
+	width: Getter<number | null>;
+
+	/** Changes the width; `persist` also remembers it for the next visit. */
+	setWidth: (width: number | null, persist: boolean) => void;
 };
 
 class SidebarState {
@@ -25,11 +31,16 @@ class SidebarState {
 	open = $derived.by(() => this.props.open());
 	openMobile = $state(false);
 	setOpen: SidebarStateProps['setOpen'];
+	width = $derived.by(() => this.props.width());
+	setWidth: SidebarStateProps['setWidth'];
+	/** True while the edge is being dragged: no width animation then. */
+	resizing = $state(false);
 	#isMobile: IsMobile;
 	state = $derived.by(() => (this.open ? 'expanded' : 'collapsed'));
 
 	constructor(props: SidebarStateProps) {
 		this.setOpen = props.setOpen;
+		this.setWidth = props.setWidth;
 		this.#isMobile = new IsMobile();
 		this.props = props;
 	}
