@@ -154,6 +154,7 @@ test('an assistant connects through login and consent, then reads as that person
 		'create_page',
 		'update_page',
 		'append_to_page',
+		'upload_image',
 		'move_page',
 		'add_to_inbox',
 		'list_inbox',
@@ -251,6 +252,52 @@ test('an assistant writes as the person, and the history says so', async ({
 	await page.goto(`/w/${id}/history`);
 	await expect(page.getByText('Max Notiz über E2E-Assistent')).toHaveCount(3);
 	await expect(page.getByText('Gedanken ergänzt')).toBeVisible();
+});
+
+test('an assistant uploads an image and puts it on a page', async ({
+	page,
+	playwright,
+	request
+}) => {
+	const token = await connectAssistant({ page, playwright, request }, 'Bea Bild');
+	const id = `e2e/ki-bild-${Date.now()}`;
+	await callTool(request, token, 'create_page', { id, content: '# Mit Bild\n\nText.\n' });
+
+	// One transparent pixel.
+	const png =
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+	const uploaded = await callTool(request, token, 'upload_image', {
+		id,
+		data: `data:image/png;base64,${png}`,
+		filename: 'Pixel',
+		alt: 'Ein Pixel'
+	});
+	expect(uploaded).toMatchObject({ filename: 'Pixel.png', mimeType: 'image/png', size: 70 });
+	expect(uploaded.markdown).toBe(`![Ein Pixel](/api/files/${uploaded.id})`);
+
+	await callTool(request, token, 'append_to_page', { id, content: uploaded.markdown });
+	await page.goto(`/w/${id}`);
+	const image = page.locator(`main img[src$="/api/files/${uploaded.id}"]`).first();
+	await expect(image).toBeVisible();
+	expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+
+	const refused = async (args: object) => {
+		const response = await rpc(
+			request,
+			'tools/call',
+			{ name: 'upload_image', arguments: { id, ...args } },
+			token
+		);
+		const { result } = await response.json();
+		expect(result.isError).toBe(true);
+		return result.content[0].text as string;
+	};
+	// Not an image, never the wiki's own network, and only to a page that exists.
+	expect(
+		await refused({ data: Buffer.from('<svg onload="alert(1)"/>').toString('base64') })
+	).toContain('kein Bild');
+	expect(await refused({ url: `${baseURL}/favicon.png` })).toContain('keine öffentliche Adresse');
+	expect(await refused({ id: `${id}-gibts-nicht`, data: png })).toContain('Keine Seite');
 });
 
 test('an assistant may do no more than the person who connected it', async ({
