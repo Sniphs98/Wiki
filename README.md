@@ -160,14 +160,17 @@ What someone may not read doesn't exist for them: the page is missing from the s
 
 ### AI assistants (MCP)
 
-The wiki can serve as a "second brain" for AI assistants such as ChatGPT or Claude, over the [Model Context Protocol](https://modelcontextprotocol.io). The assistant can then search the wiki, read pages, list areas and tags, look up backlinks — and create, change, tag, move or append to pages. It also takes notes in the person's inbox on request ("notier dir das" — take a note of this) and sorts notes into the wiki together with them. Every change is a new version; the history shows who made it through which assistant (e.g. "Erika Muster über ChatGPT"). Assistants can't delete pages.
+The wiki can serve as a "second brain" for AI assistants such as ChatGPT or Claude, over the [Model Context Protocol](https://modelcontextprotocol.io). The assistant can then search the wiki, read pages, list areas and tags, look up backlinks — and create, change, tag, move or append to pages, and upload images to them. It also takes notes in the person's inbox on request ("notier dir das" — take a note of this) and sorts notes into the wiki together with them. Every change is a new version; the history shows who made it through which assistant (e.g. "Erika Muster über ChatGPT"). Assistants can't delete pages.
 
 | Tool                                                                 | What it does                                                           |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `search`, `fetch`                                                    | Search (by words, and by meaning if set up) and read a page in full    |
 | `list_pages`, `list_tags`, `get_backlinks`                           | Browse areas and tags, find related pages                              |
 | `create_page`, `update_page`, `append_to_page`, `move_page`          | Write; `update_page` refuses to overwrite a newer version than it read |
+| `upload_image`                                                       | Upload an image to a page, from a URL or as base64                     |
 | `add_to_inbox`, `list_inbox`, `file_inbox_note`, `delete_inbox_note` | The person's inbox                                                     |
+
+`upload_image` takes PNG, JPEG, GIF, WebP, AVIF and BMP up to 10 MB (the type is read from the file itself; SVG is refused) and returns the Markdown to put the image into the text. With a URL, the wiki downloads the image itself — only from public addresses on the internet, never from its own network (no `localhost`, private ranges or cloud metadata addresses, also not after a redirect). Images from the own network can be sent as base64.
 
 The address for the assistant is `https://your-wiki.example.org/mcp` (under a path: `https://example.org/wiki/mcp`). It logs in with **OAuth**: everyone connects the assistant once to their own wiki account — log in, then **Erlauben** (Allow) — and from then on the assistant acts as that person. So it's clear who did what, and there's no shared password. Assistants register themselves (dynamic client registration). Under **Einstellungen → KI-Verbindungen** (Settings → AI connections), everyone sees their connected assistants and can disconnect them; access ends at once.
 

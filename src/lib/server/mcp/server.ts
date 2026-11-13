@@ -22,6 +22,15 @@ import { slugifyPath } from '$lib/slug';
 import { linkedPagePaths, refreshWikiLinks } from '$lib/wiki-links';
 import { withBase } from '$lib/base-path';
 import { checkDiagrams } from '$lib/server/diagram-check';
+import { createAttachment } from '$lib/server/repo/attachments';
+import {
+	decodeBase64Image,
+	downloadImage,
+	ImageError,
+	imageFilename,
+	imageMarkdown,
+	sniffImageType
+} from '$lib/server/mcp/images';
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
 // Writes never lose anything: every change is a new version in the history.
@@ -106,7 +115,9 @@ export function createWikiMcpServer(origin: string, actor: McpActor) {
 				'Seiten werden über ihren Pfad angesprochen. Erst mit `search` suchen, dann mit ' +
 				'`fetch` lesen. `[[Seitenname]]` im Text ist ein Link auf eine andere Seite. ' +
 				'Die erste Zeile einer Seite ist eine Überschrift (`# Titel`) und ihr Titel. ' +
-				'Seiten haben Tags (`list_tags`, `list_pages` mit `tag`). Was noch keinen Platz ' +
+				'Seiten haben Tags (`list_tags`, `list_pages` mit `tag`). Bilder lädt `upload_image` ' +
+				'zu einer Seite hoch; das zurückgegebene Markdown dann in den Text einfügen. ' +
+				'Was noch keinen Platz ' +
 				'hat, kommt in die persönliche Inbox (`add_to_inbox`). ' +
 				'Jede Änderung wird als neue Version gespeichert und lässt sich wiederherstellen. ' +
 				'Diagramme stehen als Codeblock im Text und werden im Wiki gezeichnet: ' +
@@ -385,6 +396,80 @@ export function createWikiMcpServer(origin: string, actor: McpActor) {
 				if (err instanceof PageConflictError) return conflict(err.latestVersion);
 				throw err;
 			}
+		}
+	);
+
+	server.registerTool(
+		'upload_image',
+		{
+			title: 'Bild hochladen',
+			description:
+				'Lädt ein Bild (PNG, JPEG, GIF, WebP, AVIF, BMP; höchstens 10 MB) zu einer ' +
+				'bestehenden Seite hoch – entweder von einer öffentlichen Adresse (`url`) oder als ' +
+				'Base64 (`data`, auch als data-URL). Das Bild steht danach noch nicht im Text: Füge ' +
+				'das zurückgegebene `markdown` mit `append_to_page` oder `update_page` an der ' +
+				'passenden Stelle ein.',
+			inputSchema: {
+				id: z.string().min(1).describe('Pfad der Seite, zu der das Bild gehört'),
+				url: z
+					.string()
+					.optional()
+					.describe('Öffentliche http(s)-Adresse des Bildes – statt `data`'),
+				data: z.string().optional().describe('Das Bild als Base64 oder data-URL – statt `url`'),
+				filename: z
+					.string()
+					.max(200)
+					.optional()
+					.describe('Dateiname, z. B. "architektur.png"; sonst aus der Adresse'),
+				alt: z
+					.string()
+					.max(300)
+					.optional()
+					.describe('Kurze Beschreibung des Bildes für das Markdown (Alternativtext)')
+			},
+			annotations: { ...WRITES, openWorldHint: true }
+		},
+		async ({ id, url, data, filename, alt }) => {
+			if (!url === !data) return failure('Gib entweder `url` oder `data` an, nicht beides.');
+			const found = actor.access.canRead(id) ? await getPageWithLatestVersion(id) : null;
+			if (!found) return notFoundOrMoved(id, actor.access);
+			if (!actor.access.canEdit(id)) return notAllowed(id);
+
+			let bytes: Buffer;
+			let source: URL | undefined;
+			try {
+				if (url) ({ data: bytes, url: source } = await downloadImage(url));
+				else bytes = decodeBase64Image(data!);
+			} catch (err) {
+				if (err instanceof ImageError) return failure(err.message);
+				throw err;
+			}
+			const mimeType = sniffImageType(bytes);
+			if (!mimeType) {
+				return failure(
+					'Das ist kein Bild, das das Wiki zeigen kann (PNG, JPEG, GIF, WebP, AVIF, BMP).'
+				);
+			}
+
+			const name = imageFilename(mimeType, filename, source);
+			const fileId = await createAttachment({
+				pageId: found.page.id,
+				filename: name,
+				mimeType,
+				size: bytes.length,
+				data: bytes,
+				uploadedBy: actor.userId
+			});
+			// Stored without the base path, like every link in a page's text.
+			const path: `/${string}` = `/api/files/${fileId}`;
+			return json({
+				id: fileId,
+				filename: name,
+				mimeType,
+				size: bytes.length,
+				url: `${origin}${withBase(path)}`,
+				markdown: imageMarkdown(alt?.trim() || name.replace(/\.[^.]+$/, ''), path)
+			});
 		}
 	);
 
