@@ -15,6 +15,8 @@ import { startSemanticIndex } from '$lib/server/search';
 import { rebuildLinks } from '$lib/server/backlinks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { basePath, withBase } from '$lib/base-path';
+import { env } from '$env/dynamic/private';
+import { diagnoseSearch, measureSearchStep } from '$lib/server/search/diagnostics';
 
 // Always reachable, regardless of AUTH_MODE — otherwise nobody could ever
 // log in on a `full` (private) wiki.
@@ -41,7 +43,9 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		error(403, `Cross-site ${event.request.method} form submissions are forbidden`);
 	}
 
-	const session = await auth.api.getSession({ headers: event.request.headers });
+	const session = await measureSearchStep('session', () =>
+		auth.api.getSession({ headers: event.request.headers })
+	);
 
 	if (session) {
 		event.locals.session = session.session;
@@ -63,7 +67,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		const viewer = pdfUserId
 			? { id: pdfUserId, role: await getUserRole(pdfUserId) }
 			: event.locals.user;
-		event.locals.access = await accessFor(viewer, authMode);
+		event.locals.access = await measureSearchStep('access', () => accessFor(viewer, authMode));
 	}
 
 	if (!building && !isPublicPath(wikiPath(event.url.pathname))) {
@@ -82,7 +86,13 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ event, resolve, auth, building });
 };
 
-export const handle: Handle = handleAuth;
+export const handle: Handle = (input) => {
+	const path = wikiPath(input.event.url.pathname);
+	const isSearch = path === '/suche' || path === '/suche/__data.json' || path === '/mcp';
+	return env.SEARCH_DIAGNOSTICS === 'true' && isSearch
+		? diagnoseSearch(() => handleAuth(input))
+		: handleAuth(input);
+};
 
 export const init: ServerInit = async () => {
 	if (building) return;

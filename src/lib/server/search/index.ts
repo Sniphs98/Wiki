@@ -2,6 +2,7 @@ import { dbDialect } from '$lib/server/db';
 import { queueSemanticIndex, semanticSearch } from './semantic';
 import { fuseRankings } from './semantic/vectors';
 import type { SearchHit, SearchProvider } from './types';
+import { measureSearchStep } from './diagnostics';
 
 /**
  * The wiki's search. Pages are (re)indexed by the page repository
@@ -19,8 +20,8 @@ const provider: SearchProvider =
  */
 export async function searchPages(query: string, limit = 50): Promise<SearchHit[]> {
 	const [byWords, byMeaning] = await Promise.all([
-		provider.search(query, limit),
-		semanticSearch(query, limit)
+		measureSearchStep('fulltext', () => provider.search(query, limit)),
+		measureSearchStep('semantic', () => semanticSearch(query, limit))
 	]);
 	return fuseRankings([byWords, byMeaning]).slice(0, limit);
 }
