@@ -102,6 +102,29 @@ You can switch between local and cloud at any time: after a model change, the wi
 
 The service sees the text of all pages, including areas only a few people may read — otherwise those people couldn't find them. Who sees what in the results is still governed by the permissions. The vectors are kept in the wiki's own database (table `page_search_chunk`) and compared in memory; no database extension such as pgvector is needed.
 
+#### Diagnosing slow searches
+
+Set `SEARCH_DIAGNOSTICS=true` in the app's environment and recreate the container.
+Search responses (HTML and SvelteKit data requests, also under `BASE_PATH`) and
+MCP responses then include a `Server-Timing` header and an `X-Search-Request-Id`.
+The app logs one matching `[search-timing]` JSON entry per request. Search terms,
+page contents and credentials are not included.
+
+In the browser's Network panel, inspect the `/suche?q=…` or `/suche/__data.json?…`
+response. The durations in milliseconds distinguish `session`, `access`, `layout`,
+`fulltext`, `semantic`, `vector_load`, `embedding` and `total`. Steps overlap and
+are nested, so their durations must not be added together. `total` ends when the
+server has produced the response headers; proxy/network transfer and browser
+rendering are additional time. `fulltext` includes index preparation on first use.
+
+```sh
+docker compose logs --since=10m app | rg '\[search-timing\]'
+```
+
+The current hybrid search waits for semantic results before returning full-text
+results. A slow embedding request can therefore delay all results until its
+five-second timeout, even when the database responds quickly.
+
 ### Links and moving pages
 
 - **Suggestions:** type `[[` in the editor — or pick **Seite verlinken** (Link a page) in the "/" menu — and a list suggests matching pages (title and path). Choose with the arrow keys; Enter or Tab inserts the link, Escape closes the list. For a name no page has yet, there's "„…" verlinken (neue Seite)" to link a page that doesn't exist yet. If two pages share a title, the path is inserted (`[[hr/leave|Leave]]`) so it's clear which one is meant.
@@ -329,6 +352,26 @@ Use the migrations rather than `npm run db:push`: some of them carry hand-writte
 The end-to-end tests build the app and run it as in the Docker image (`npm start`), with databases of their own under `.data/e2e/`, seeded fresh on every run — the development database stays untouched. Next to the main server they start servers for the other access modes a server under `BASE_PATH=/wiki`, and stand-ins for an embeddings service (`e2e/fake-embeddings.js`) and for Microsoft's login (`e2e/fake-microsoft.js`). Among other things, they check that the web view and the PDF break at the same places, that no blank pages appear and that the page break lines match the real PDF.
 
 On every pull request and every push to `main`, GitHub Actions runs lint, type check, unit and end-to-end tests and the Docker build (`.github/workflows/ci.yml`). There, an end-to-end test that fails once is retried once and reported as flaky.
+
+### Search performance scenario
+
+```sh
+npx playwright install chromium
+npm run test:search-performance
+# More synthetic pages (default: 200, about 6 KB of text each):
+SEARCH_BENCH_PAGES=2000 npm run test:search-performance
+```
+
+This builds the production server and tests it under `/wiki` with a temporary
+SQLite database. It measures cold and repeated HTTP searches both anonymously
+and with a session in `AUTH_MODE=full`, a Chromium search
+from submitting the form to visible results, and an embedding service with
+1.5-second and 6.5-second delays. It checks that results are present and that the
+embedding timeout is enforced. It never uses the development database or a real
+embedding service. This is a diagnostic benchmark, not a fixed latency promise;
+host load affects the results. It does not reproduce a production reverse proxy,
+Microsoft login, PostgreSQL or Ollama inference. Set `SEARCH_BENCH_SKIP_BUILD=true`
+only when reusing an existing build of the current source.
 
 ### Releases
 

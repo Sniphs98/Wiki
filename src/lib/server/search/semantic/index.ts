@@ -5,6 +5,7 @@ import { chunkPage } from './chunks';
 import { embed, embeddingModel, embeddingsConfigured, minScore } from './embeddings';
 import { similarity } from './vectors';
 import type { ChunkStore, PageChunks, StoredChunk } from './store.types';
+import { measureSearchStep } from '../diagnostics';
 
 /**
  * Semantic search: finds pages by what they're about, not by their words
@@ -152,8 +153,8 @@ export async function startSemanticIndex() {
 export async function semanticSearch(query: string, limit: number): Promise<SearchHit[]> {
 	if (!semanticSearchEnabled || !query.trim()) return [];
 	try {
-		await load();
-		const [vector] = await embed([query], QUERY_TIMEOUT_MS);
+		await measureSearchStep('vector_load', load);
+		const [vector] = await measureSearchStep('embedding', () => embed([query], QUERY_TIMEOUT_MS));
 		const hits: { hit: SearchHit; score: number }[] = [];
 		for (const page of pages.values()) {
 			let best: { score: number; text: string } | null = null;
